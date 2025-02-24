@@ -1,0 +1,62 @@
+/* #cursor,#text{
+    &:after {
+      position: relative;
+      content: '_';
+      right: 0;
+      animation: blink 500ms infinite;
+    }
+  }
+  @keyframes blink {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+   */
+
+.typer{
+  font-family: monospace;
+  font-weight: 800;
+  font-size: 5em;
+}
+
+.cursor{
+  font-family: monospace;
+  font-weight: 800;
+  color: black;
+  animation:blink 500ms infinite;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+.removeAnimation{
+  animation: fadeOut 0.2s forwards;
+}
+
+@keyframes fadeOut {
+  from {
+      opacity: 1;
+  }
+  to {
+      opacity: 0;
+      display: none;
+  }
+}
+
+.disabled{
+  visibility: hidden;
+}

@@ -1,0 +1,73 @@
+.Container {
+    font-family: monospace;
+    display: flex;
+    flex-direction: column; /* Ensure children are stacked vertically */
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    height: 100vh; /* Ensure the container takes full height */
+}
+
+.Logo {
+    display: flex; /* Add display flex to center content inside */
+    justify-content: center;
+    align-items: center;
+    width: 100%; /* Ensure the logo container takes full width */
+    height: 200px; /* Set a fixed height for the logo container */
+}
+
+.Profile{
+    position: absolute;
+}
+
+.EditProfilePicture {
+    opacity: 0;
+}
+
+.fadeIn {
+    opacity: 1;
+    animation: fadeIn 0.2s forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* design */
+.formDesign{
+    width: 16em;
+    margin-top:-1em;
+}
+    .input{
+        height:2em;
+        background-color:#D9D9D9;
+        padding:1em 1em;
+        margin:0.2em 0em;
+        width:16em
+    }
+    .gButton{
+        align-items:center; 
+        display: flex;
+    }
+    .codeInput{
+        width:13.7em;
+    }
+    .goContainer{
+        height:2em;
+    }
+    
+    .goButton{
+        margin-left:0.3em;
+        width:2em;
+        height:2em;
+        background-color: #D9D9D9;
+    }
+
+    .tips{
+        margin-top:1em;
+    }

@@ -1,0 +1,32 @@
+.Center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.Typer {
+    position: absolute;
+    z-index: 2;
+}
+
+.LogOn {
+    position: absolute;
+    z-index: 1;
+}
+
+.disableElement{
+    display: none;
+}
+.fadeIn{
+    animation: fadeIn 0.2s forwards;
+}
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+    }
+    to{
+        opacity:1;
+    }
+}

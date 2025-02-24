@@ -1,0 +1,24 @@
+.Logo {
+    position: relative; /* Position relative to contain the absolute positioned edit icon */
+    display: flex; /* Add display flex to center content inside */
+    justify-content: center;
+    align-items: center;
+    width: 200px; /* Set a fixed width for the logo container */
+    height: 200px; /* Set a fixed height for the logo container */
+}
+
+.ProfilePicture {
+    /* Add any specific styles for the profile picture here */
+}
+
+.EditProfilePicture {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.fadeIn {
+    opacity: 1;
+}
