@@ -3,6 +3,7 @@ import AnimatedComms from '@/components/animator-comms';
 import Styles from '@/styles/homePage.module.css';
 import React,{useState} from 'react';
 import StartSession from "@/components/start-session";
+import { useDynamicRouteParams } from 'next/dist/server/app-render/dynamic-rendering';
 // State Variable 'styles' and its setter function 'setStyles' initialized to 'Styles.centerTyper'.
 
 export default function Home() {
