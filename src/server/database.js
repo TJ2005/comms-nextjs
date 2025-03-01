@@ -8,43 +8,45 @@ const pool = new Pool({
 });
 
 // Database schema initializer
-const initializer = `-- Users Table: Stores user information
-CREATE TABLE IF NOT EXISTS users (
-  id SERIAL PRIMARY KEY,           -- Auto-incrementing user ID
-  username VARCHAR(255) NOT NULL   -- User's username
-);
+// Add cookie support to the database schema
+    const initializer = `-- Users Table: Stores user information
+    CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,           -- Auto-incrementing user ID
+    username VARCHAR(255) NOT NULL   -- User's username
+    profile_picture_url VARCHAR(255) -- URL of the user's profile picture
+    );
 
--- Sessions Table: Represents a chat session (e.g., chat room)
-CREATE TABLE IF NOT EXISTS sessions (
-  id SERIAL PRIMARY KEY,           -- Auto-incrementing session ID
-  code VARCHAR(255) NOT NULL,      -- Unique session code
-  session_settings JSONB NOT NULL DEFAULT '{"max_users": 5, "delete_messages": false, "edit_messages": true, "allow_new_users": true}' -- Stores the settings for a session
-);
+    -- Sessions Table: Represents a chat session (e.g., chat room)
+    CREATE TABLE IF NOT EXISTS sessions (
+    id SERIAL PRIMARY KEY,           -- Auto-incrementing session ID
+    code VARCHAR(255) NOT NULL,      -- Unique session code
+    session_settings JSONB NOT NULL DEFAULT '{"max_users": 5, "delete_messages": false, "edit_messages": true, "allow_new_users": true}' -- Stores the settings for a session
+    );
 
--- User-Sessions Table: Tracks users in sessions and their admin status
-CREATE TABLE IF NOT EXISTS user_sessions (
-  user_id INTEGER NOT NULL,        -- ID of the user
-  session_id INTEGER NOT NULL,     -- ID of the session
-  is_admin BOOLEAN DEFAULT FALSE,  -- Whether the user is an admin in this session
-  
-  PRIMARY KEY (user_id, session_id), -- Composite primary key
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,  -- Foreign key to users
-  FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE -- Foreign key to sessions
-);
+    -- User-Sessions Table: Tracks users in sessions and their admin status
+    CREATE TABLE IF NOT EXISTS user_sessions (
+    user_id INTEGER NOT NULL,        -- ID of the user
+    session_id INTEGER NOT NULL,     -- ID of the session
+    is_admin BOOLEAN DEFAULT FALSE,  -- Whether the user is an admin in this session
+    
+    PRIMARY KEY (user_id, session_id), -- Composite primary key
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,  -- Foreign key to users
+    FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE -- Foreign key to sessions
+    );
 
--- Messages Table: Stores messages sent in sessions
-CREATE TABLE IF NOT EXISTS messages (
-  id SERIAL PRIMARY KEY,           -- Auto-incrementing message ID
-  user_id INTEGER NOT NULL,        -- ID of the user who sent the message
-  session_id INTEGER NOT NULL,     -- ID of the session in which the message was sent
-  content TEXT,                    -- Message content (text or file URL)
-  file_url VARCHAR(255),           -- URL of the file (if applicable)
-  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Time when the message was sent
-  message_type VARCHAR(50) NOT NULL,  -- Type of message (e.g., text, file, image)
-  
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,  -- Foreign key to users
-  FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE  -- Foreign key to sessions
-);
+    -- Messages Table: Stores messages sent in sessions
+    CREATE TABLE IF NOT EXISTS messages (
+    id SERIAL PRIMARY KEY,           -- Auto-incrementing message ID
+    user_id INTEGER NOT NULL,        -- ID of the user who sent the message
+    session_id INTEGER NOT NULL,     -- ID of the session in which the message was sent
+    content TEXT,                    -- Message content (text or file URL)
+    file_url VARCHAR(255),           -- URL of the file (if applicable)
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Time when the message was sent
+    message_type VARCHAR(50) NOT NULL,  -- Type of message (e.g., text, file, image)
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,  -- Foreign key to users
+    FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE  -- Foreign key to sessions
+    );
 `;
 
 let isInitialized = false;
@@ -63,21 +65,27 @@ async function initialize() {
 /**
  * Add a new user or return the ID if the user already exists.
  * @param {string} username - The username of the user.
+ * @param {string} [pfpUrl] - The profile picture URL of the user (optional).
  * @returns {Promise<number>} - The ID of the user.
+ * @throws {error} - -1 - The user already exists.
  */
-async function newUser(username) {
+async function newUser(username, pfpUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/1200px-Default_pfp.svg.png") {
+    // Check if the user already exists
     const userCheck = await pool.query(
         `SELECT id FROM users WHERE username = $1`,
         [username]
     );
 
+    // If the user exists, return -1 since its id is uniquely generated
+    // and shall not be granted to anyone else.
     if (userCheck.rowCount > 0) {
-        return userCheck.rows[0].id;
+        return -1;
     }
 
+    // Otherwise, create a new user and return the user ID
     const result = await pool.query(
-        `INSERT INTO users (username) VALUES ($1) RETURNING id`,
-        [username]
+        `INSERT INTO users (username, profile_picture_url) VALUES ($1, $2) RETURNING id`,
+        [username, pfpUrl]
     );
     return result.rows[0].id;
 }

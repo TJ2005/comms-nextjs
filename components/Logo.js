@@ -9,7 +9,6 @@ import Styles from '@/styles/start-session.module.css';
 
 const Logo = () => {
     const [isHovered, setIsHovered] = useState(false);
-
     const handleMouseEnter = () => {
         setIsHovered(true);
     };
@@ -17,27 +16,34 @@ const Logo = () => {
     const handleMouseLeave = () => {
         setIsHovered(false);
     };
+    const handlePfpChange = () => {
+        
+    }
 
     return (
+
         <div 
-            className={Styles.Logo} 
+             
             onMouseEnter={handleMouseEnter} 
             onMouseLeave={handleMouseLeave}
+            onClick={handlePfpChange}
         >
-            <img 
-                className={`${Styles.ProfilePicture} ${Styles.Profile}`} 
-                src='pfp.svg' 
-                height="200px" 
-                width="200px" 
-                alt="Profile Picture" 
+            <div className={Styles.Logo}>
+                <img 
+                    className={`${Styles.ProfilePicture} ${Styles.Profile}`} 
+                    src='pfp.svg'
+                    height="200px" 
+                    width="200px" 
+                    alt="Profile Picture" 
+                />
+                <img 
+                    className={`${Styles.EditProfilePicture} ${Styles.Profile} ${isHovered ? Styles.fadeIn : ''}`} 
+                    src='pfp-edit.png' 
+                    height="200px" 
+                    width='200px' 
+                    alt="Edit Profile Picture" 
             />
-            <img 
-                className={`${Styles.EditProfilePicture} ${Styles.Profile} ${isHovered ? Styles.fadeIn : ''}`} 
-                src='pfp-edit.png' 
-                height="200px" 
-                width='200px' 
-                alt="Edit Profile Picture" 
-            />
+            </div>
         </div>
     );
 };
