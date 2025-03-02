@@ -1,64 +1,78 @@
-const { Pool } = require('pg');
-const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'comms',
-    password: 'root',
-    port: 5432
+const mongoose = require('mongoose');
+
+// Replace 'your_database_name' with your actual database name
+const mongoURI = 'mongodb://localhost:27017/your_database_name';
+
+// Connect to MongoDB using Mongoose
+mongoose.connect(mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+.then(() => {
+    console.log('Connected to MongoDB successfully');
+})
+.catch((error) => {
+    console.error('Error connecting to MongoDB:', error);
 });
 
-// Database schema initializer
-// Add cookie support to the database schema
-    const initializer = `-- Users Table: Stores user information
-    CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,           -- Auto-incrementing user ID
-    username VARCHAR(255) NOT NULL   -- User's username
-    profile_picture_url VARCHAR(255) -- URL of the user's profile picture
-    );
 
-    -- Sessions Table: Represents a chat session (e.g., chat room)
-    CREATE TABLE IF NOT EXISTS sessions (
-    id SERIAL PRIMARY KEY,           -- Auto-incrementing session ID
-    code VARCHAR(255) NOT NULL,      -- Unique session code
-    session_settings JSONB NOT NULL DEFAULT '{"max_users": 5, "delete_messages": false, "edit_messages": true, "allow_new_users": true}' -- Stores the settings for a session
-    );
 
-    -- User-Sessions Table: Tracks users in sessions and their admin status
-    CREATE TABLE IF NOT EXISTS user_sessions (
-    user_id INTEGER NOT NULL,        -- ID of the user
-    session_id INTEGER NOT NULL,     -- ID of the session
-    is_admin BOOLEAN DEFAULT FALSE,  -- Whether the user is an admin in this session
-    
-    PRIMARY KEY (user_id, session_id), -- Composite primary key
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,  -- Foreign key to users
-    FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE -- Foreign key to sessions
-    );
+// Define the user schema
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true },
+    profile_picture_url: { type: String, default: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/1200px-Default_pfp.svg.png" }
+});
 
-    -- Messages Table: Stores messages sent in sessions
-    CREATE TABLE IF NOT EXISTS messages (
-    id SERIAL PRIMARY KEY,           -- Auto-incrementing message ID
-    user_id INTEGER NOT NULL,        -- ID of the user who sent the message
-    session_id INTEGER NOT NULL,     -- ID of the session in which the message was sent
-    content TEXT,                    -- Message content (text or file URL)
-    file_url VARCHAR(255),           -- URL of the file (if applicable)
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Time when the message was sent
-    message_type VARCHAR(50) NOT NULL,  -- Type of message (e.g., text, file, image)
-    
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,  -- Foreign key to users
-    FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE  -- Foreign key to sessions
-    );
-`;
+// Define the session schema
+const sessionSchema = new mongoose.Schema({
+    code: { type: String, required: true },
+    session_settings: {
+        type: Map,
+        of: mongoose.Schema.Types.Mixed,
+        default: {
+            max_users: 5,
+            delete_messages: false,
+            edit_messages: true,
+            allow_new_users: true
+        }
+    }
+});
 
-let isInitialized = false;
+// Define the user-session schema (many-to-many relationship between users and sessions)
+const userSessionSchema = new mongoose.Schema({
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    session_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Session', required: true },
+    is_admin: { type: Boolean, default: false }
+});
+
+// Define the message schema for a session
+const messageSchema = new mongoose.Schema({
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    session_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Session', required: true },
+    content: { type: String },
+    file_url: { type: String },
+    timestamp: { type: Date, default: Date.now },
+    message_type: { type: String, required: true }
+});
+
+// Create the Mongoose models from the schemas
+const User = mongoose.model('User', userSchema);
+const Session = mongoose.model('Session', sessionSchema);
+const UserSession = mongoose.model('UserSession', userSessionSchema);
+const Message = mongoose.model('Message', messageSchema);
 
 /**
  * Initialize the database schema.
- * Ensures that the tables exist in the database. Runs only once per execution.
+ * Ensures that the necessary collections are present and populated.
+ * Runs only once per execution.
  */
 async function initialize() {
-    if (!isInitialized) {
-        await pool.query(initializer);
-        isInitialized = true;
+    const usersCount = await User.countDocuments();
+    if (usersCount === 0) {
+        console.log("Initializing database...");
+        // Example of inserting default data if no users exist
+        const defaultUser = new User({ username: 'default' });
+        await defaultUser.save();
     }
 }
 
@@ -66,110 +80,84 @@ async function initialize() {
  * Add a new user or return the ID if the user already exists.
  * @param {string} username - The username of the user.
  * @param {string} [pfpUrl] - The profile picture URL of the user (optional).
- * @returns {Promise<number>} - The ID of the user.
- * @throws {error} - -1 - The user already exists.
+ * @returns {Promise<string>} - The ID of the user or -1 if the user already exists.
+ * @throws {error} - If the user already exists, returns -1.
  */
 async function newUser(username, pfpUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/1200px-Default_pfp.svg.png") {
-    // Check if the user already exists
-    const userCheck = await pool.query(
-        `SELECT id FROM users WHERE username = $1`,
-        [username]
-    );
+    const existingUser = await User.findOne({ username });
+    if (existingUser) return -1;
 
-    // If the user exists, return -1 since its id is uniquely generated
-    // and shall not be granted to anyone else.
-    if (userCheck.rowCount > 0) {
-        return -1;
-    }
-
-    // Otherwise, create a new user and return the user ID
-    const result = await pool.query(
-        `INSERT INTO users (username, profile_picture_url) VALUES ($1, $2) RETURNING id`,
-        [username, pfpUrl]
-    );
-    return result.rows[0].id;
+    const newUser = new User({ username, profile_picture_url: pfpUrl });
+    await newUser.save();
+    return newUser._id;
 }
 
 /**
  * Create a new session with a unique code.
  * @param {string} code - The unique session code.
- * @returns {Promise<number>} - The ID of the session.
+ * @returns {Promise<string>} - The ID of the session.
  */
 async function createSession(code) {
-    const defaultSettings = {
-        max_users: 5,
-        delete_messages: false,
-        edit_messages: true,
-        allow_new_users: true
-    };
-
-    const result = await pool.query(
-        `INSERT INTO sessions (code, session_settings) VALUES ($1, $2) RETURNING id`,
-        [code, defaultSettings]
-    );
-    return result.rows[0].id;
+    const newSession = new Session({ code });
+    await newSession.save();
+    return newSession._id;
 }
 
 /**
  * Add a user to a session.
- * @param {number} userId - The ID of the user.
- * @param {number} sessionId - The ID of the session.
+ * @param {string} userId - The ID of the user.
+ * @param {string} sessionId - The ID of the session.
  */
 async function joinSession(userId, sessionId) {
-    await pool.query(
-        `INSERT INTO user_sessions (user_id, session_id) 
-         VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-        [userId, sessionId]
-    );
+    const existingUserSession = await UserSession.findOne({ user_id: userId, session_id: sessionId });
+    if (!existingUserSession) {
+        const userSession = new UserSession({ user_id: userId, session_id: sessionId });
+        await userSession.save();
+    }
 }
 
 /**
  * Add admin privileges to a user in a session.
- * @param {number} userId - The ID of the user.
- * @param {number} sessionId - The ID of the session.
+ * @param {string} userId - The ID of the user.
+ * @param {string} sessionId - The ID of the session.
  */
 async function addAdmin(userId, sessionId) {
-    await pool.query(
-        `UPDATE user_sessions SET is_admin = TRUE 
-         WHERE user_id = $1 AND session_id = $2`,
-        [userId, sessionId]
+    await UserSession.updateOne(
+        { user_id: userId, session_id: sessionId },
+        { $set: { is_admin: true } }
     );
 }
 
 /**
  * Remove admin privileges from a user in a session.
- * @param {number} userId - The ID of the user.
- * @param {number} sessionId - The ID of the session.
+ * @param {string} userId - The ID of the user.
+ * @param {string} sessionId - The ID of the session.
  */
 async function removeAdmin(userId, sessionId) {
-    await pool.query(
-        `UPDATE user_sessions SET is_admin = FALSE 
-         WHERE user_id = $1 AND session_id = $2`,
-        [userId, sessionId]
+    await UserSession.updateOne(
+        { user_id: userId, session_id: sessionId },
+        { $set: { is_admin: false } }
     );
 }
 
 /**
- * Add or retrieve a session, ensuring the user is joined.
- * If the session is created, the user becomes an admin.
+ * Join or create a session, ensuring the user is joined and an admin if created.
+ * If the session is created, the user will be made an admin.
  * @param {string} username - The username of the user.
  * @param {string} code - The session code.
- * @returns {Promise<{sessionId: number, userId: number}>} - The IDs of the session and user.
+ * @returns {Promise<{sessionId: string, userId: string}>} - The IDs of the session and user.
  */
 async function joinOrCreateSession(username, code) {
     const userId = await newUser(username);
 
-    let session = await pool.query(
-        `SELECT id FROM sessions WHERE code = $1`,
-        [code]
-    );
-
+    let session = await Session.findOne({ code });
     let sessionId;
-    if (session.rowCount === 0) {
+
+    if (!session) {
         sessionId = await createSession(code);
-        addAdmin(userId, sessionId);
+        await addAdmin(userId, sessionId);
     } else {
-        sessionId = session.rows[0].id;
+        sessionId = session._id;
     }
 
     await joinSession(userId, sessionId);
@@ -178,87 +166,79 @@ async function joinOrCreateSession(username, code) {
 
 /**
  * Send a message in a session.
- * @param {number} userId - The ID of the user sending the message.
- * @param {number} sessionId - The ID of the session.
+ * @param {string} userId - The ID of the user sending the message.
+ * @param {string} sessionId - The ID of the session.
  * @param {string} content - The message content.
  * @param {string|null} fileUrl - The URL of the file (if applicable).
  * @param {string} messageType - The type of the message (e.g., 'text').
  */
-const sendMessage = async (userId, sessionId, content, fileUrl = null, messageType = 'text') => {
-    await pool.query(
-        `INSERT INTO messages (user_id, session_id, content, file_url, message_type) 
-         VALUES ($1, $2, $3, $4, $5)`,
-        [userId, sessionId, content, fileUrl, messageType]
-    );
-};
+async function sendMessage(userId, sessionId, content, fileUrl = null, messageType = 'text') {
+    const message = new Message({ 
+        user_id: userId, 
+        session_id: sessionId, 
+        content, 
+        file_url: fileUrl, 
+        message_type: messageType 
+    });
+    await message.save();
+}
 
 /**
  * Get messages from a session with user details.
- * @param {number} sessionId - The ID of the session.
+ * @param {string} sessionId - The ID of the session.
  * @param {number} limit - The maximum number of messages to retrieve.
  * @returns {Promise<Array>} - The messages in the session.
  */
-const getMessage = async (sessionId, limit = 100) => {
-    const result = await pool.query(
-        `SELECT messages.id, messages.user_id, messages.session_id, messages.content, 
-                messages.file_url, messages.timestamp, messages.message_type, users.username
-         FROM messages
-         JOIN users ON messages.user_id = users.id
-         WHERE messages.session_id = $1
-         ORDER BY messages.timestamp DESC
-         LIMIT $2`,
-        [sessionId, limit]
-    );
-    return result.rows;
-};
+async function getMessage(sessionId, limit = 100) {
+    const messages = await Message.find({ session_id: sessionId })
+        .sort({ timestamp: -1 })
+        .limit(limit)
+        .populate('user_id', 'username');
+
+    return messages;
+}
 
 /**
  * Update the settings of a session.
- * @param {number} sessionId - The ID of the session.
+ * @param {string} sessionId - The ID of the session.
  * @param {Object} newSettings - The new settings for the session.
  */
 async function updateSessionSettings(sessionId, newSettings) {
-    await pool.query(
-        `UPDATE sessions SET session_settings = $1 WHERE id = $2`,
-        [newSettings, sessionId]
+    await Session.updateOne(
+        { _id: sessionId },
+        { $set: { session_settings: newSettings } }
     );
 }
 
 /**
  * Edit a message in a session.
- * @param {number} messageId - The ID of the message to edit.
+ * @param {string} messageId - The ID of the message to edit.
  * @param {string} newContent - The new content of the message.
  */
 async function editMessage(messageId, newContent) {
-    await pool.query(
-        `UPDATE messages SET content = $1 WHERE id = $2`,
-        [newContent, messageId]
+    await Message.updateOne(
+        { _id: messageId },
+        { $set: { content: newContent } }
     );
 }
 
 /**
  * Delete a message from a session.
- * @param {number} messageId - The ID of the message to delete.
+ * @param {string} messageId - The ID of the message to delete.
  */
 async function deleteMessage(messageId) {
-    await pool.query(
-        `DELETE FROM messages WHERE id = $1`,
-        [messageId]
-    );
+    await Message.deleteOne({ _id: messageId });
 }
 
 /**
  * Check if a message exists in a session.
- * @param {number} messageId - The ID of the message.
- * @param {number} sessionId - The ID of the session.
+ * @param {string} messageId - The ID of the message.
+ * @param {string} sessionId - The ID of the session.
  * @returns {Promise<boolean>} - True if the message exists, false otherwise.
  */
 async function checkMessage(messageId, sessionId) {
-    const result = await pool.query(
-        `SELECT 1 FROM messages WHERE id = $1 AND session_id = $2`,
-        [messageId, sessionId]
-    );
-    return result.rowCount > 0;
+    const message = await Message.findOne({ _id: messageId, session_id: sessionId });
+    return message ? true : false;
 }
 
 module.exports = {
@@ -275,4 +255,4 @@ module.exports = {
     editMessage,
     deleteMessage,
     checkMessage
-};
+};      
