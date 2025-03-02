@@ -1,14 +1,14 @@
 const mongoose = require('mongoose');
 
 // Replace 'your_database_name' with your actual database name
-const mongoURI = 'mongodb://localhost:27017/your_database_name';
+const mongoURI = 'mongodb://127.0.0.1:27017/COMMS';
 
 // Connect to MongoDB using Mongoose
 mongoose.connect(mongoURI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 })
-.then(() => {
+.then(async () => {
     console.log('Connected to MongoDB successfully');
 })
 .catch((error) => {

@@ -4,6 +4,7 @@ import Animator from '@/components/animator';
 import { useRef } from 'react';
 
 
+
 const animateInput=(input)=>{
     console.log(input);
     console.log("Above element is shaking");
@@ -28,6 +29,7 @@ const StartSession = () => {
             const response = await fetch('https://usernameapiv1.vercel.app/api/random-usernames');
             const data = await response.json();
             username = data.usernames[0];
+
         }
         // generate code if not provided or invalid
         if (!code) {
@@ -41,6 +43,20 @@ const StartSession = () => {
         // Handle form submission logic here with username and code
         console.log('Username:', username);
         console.log('Code:', code);
+        try {
+            const response = await fetch('/api/newUser', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, code })
+            });
+            const data = await response.json();
+            console.log('User ID:', data.userId);
+        } catch (error) {
+            console.error('Error fetching user ID:', error);
+        }
+
     };
 
     const generateAlphaCode = () => {
