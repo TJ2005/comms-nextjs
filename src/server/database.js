@@ -92,6 +92,8 @@ async function newUser(username, pfpUrl = "https://upload.wikimedia.org/wikipedi
     return newUser._id;
 }
 
+
+
 /**
  * Create a new session with a unique code.
  * @param {string} code - The unique session code.
@@ -149,7 +151,6 @@ async function removeAdmin(userId, sessionId) {
  */
 async function joinOrCreateSession(username, code) {
     const userId = await newUser(username);
-
     let session = await Session.findOne({ code });
     let sessionId;
 
@@ -241,6 +242,16 @@ async function checkMessage(messageId, sessionId) {
     return message ? true : false;
 }
 
+/**
+ * Check if a session exists using session code.
+ * @param {string} sessionCode - The code of the session.
+ * @returns {Promise<boolean>} - True if the session exists, false otherwise.
+ */
+async function checkSession(sessionCode) {
+    const session = await Session.findOne({ code: sessionCode });
+    return session ? true : false;
+}
+
 module.exports = {
     initialize,
     newUser,
@@ -254,5 +265,6 @@ module.exports = {
     updateSessionSettings,
     editMessage,
     deleteMessage,
-    checkMessage
+    checkMessage,
+    checkSession
 };      
