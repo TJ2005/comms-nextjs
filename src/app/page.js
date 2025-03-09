@@ -1,28 +1,30 @@
 "use client"
 import AnimatedComms from '@/components/animator-comms';
 import Styles from '@/styles/homePage.module.css';
-import React,{useState} from 'react';
+import React, { useState } from 'react';
 import StartSession from "@/components/start-session";
-import { useDynamicRouteParams } from 'next/dist/server/app-render/dynamic-rendering';
-// State Variable 'styles' and its setter function 'setStyles' initialized to 'Styles.centerTyper'.
+import { motion } from "framer-motion";
 
 export default function Home() {
+  const [showLogOn, setShowLogOn] = useState(false);
 
-  const fadeIn=()=>{
-    const logOnElement = document.getElementById('LogOn');
-    logOnElement.classList.add(Styles.fadeIn);
-    logOnElement.classList.remove(Styles.disableElement);
-  }
+  const fadeIn = () => {
+    setShowLogOn(true);
+  };
+
   return (
-    <body>
-      <div className={Styles.Center}>
-        <div className={Styles.Typer}>
-          <AnimatedComms onComplete={fadeIn}/> 
-        </div>
-        <div id="LogOn" className={`${Styles.LogOn} ${Styles.disableElement}`}>
-          <StartSession />
-        </div>
+    <div className={Styles.Center}>
+      <div className={Styles.Typer}>
+        <AnimatedComms onComplete={fadeIn} />
       </div>
-    </body>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showLogOn ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
+        className={Styles.LogOn}
+      >
+        {showLogOn && <StartSession />}
+      </motion.div>
+    </div>
   );
 }

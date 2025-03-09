@@ -1,3 +1,1 @@
-const database = require('./database.js');
-
-database.createSession('12345')
+/* code for managing the websockets for chat */

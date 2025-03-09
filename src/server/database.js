@@ -56,10 +56,10 @@ const messageSchema = new mongoose.Schema({
 });
 
 // Create the Mongoose models from the schemas
-const User = mongoose.model('User', userSchema);
-const Session = mongoose.model('Session', sessionSchema);
-const UserSession = mongoose.model('UserSession', userSessionSchema);
-const Message = mongoose.model('Message', messageSchema);
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+const Session = mongoose.models.Session || mongoose.model('Session', sessionSchema);
+const UserSession = mongoose.models.UserSession || mongoose.model('UserSession', userSessionSchema);
+const Message = mongoose.models.Message || mongoose.model('Message', messageSchema);
 
 /**
  * Initialize the database schema.
@@ -108,15 +108,24 @@ async function createSession(code) {
 /**
  * Add a user to a session.
  * @param {string} userId - The ID of the user.
- * @param {string} sessionId - The ID of the session.
+ * @param {string} sessionCode - The code of the session.
  */
-async function joinSession(userId, sessionId) {
-    const existingUserSession = await UserSession.findOne({ user_id: userId, session_id: sessionId });
+async function joinSession(userId, session_id) {
+    console.log("Join Session Triggered with ", userId, session_id);
+
+    if (!mongoose.Types.ObjectId.isValid(session_id)) {
+        throw new Error(`Invalid session_id: ${session_id}`);
+    }
+
+    const existingUserSession = await UserSession.findOne({ user_id: userId, session_id });
+
     if (!existingUserSession) {
-        const userSession = new UserSession({ user_id: userId, session_id: sessionId });
+        const userSession = new UserSession({ user_id: userId, session_id });
         await userSession.save();
     }
+
 }
+
 
 /**
  * Add admin privileges to a user in a session.
@@ -245,11 +254,11 @@ async function checkMessage(messageId, sessionId) {
 /**
  * Check if a session exists using session code.
  * @param {string} sessionCode - The code of the session.
- * @returns {Promise<boolean>} - True if the session exists, false otherwise.
+ * @returns {Promise<sessionId/Boolean>} - Session ID if the session exists, false otherwise.
  */
 async function checkSession(sessionCode) {
     const session = await Session.findOne({ code: sessionCode });
-    return session ? true : false;
+    return session ? session._id : false;
 }
 
 module.exports = {
@@ -267,4 +276,4 @@ module.exports = {
     deleteMessage,
     checkMessage,
     checkSession
-};      
+};

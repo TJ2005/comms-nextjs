@@ -12,19 +12,17 @@ export async function POST(req) {
     }
 
     try {
-        const sessionExists = await checkSession(sessionCode);
+        let sessionId = await checkSession(sessionCode);
+        console.log('Session exists:', sessionId);
 
-        if (sessionExists) {
-            // Join the session
-            await joinSession(userId, sessionCode);
-            return new Response(JSON.stringify({ message: 'Joined existing session', session: sessionExists }), { status: 200 });
-        } else {
-            // Create the session first, then join it
-            const newSession = await createSession(sessionCode, userId);
-            await joinSession(userId, sessionCode);
-            await addAdmin(userId, sessionCode  );
-            return new Response(JSON.stringify({ message: 'Session created and joined, you are admin!', session: newSession }), { status: 201 });
+        if (!sessionId) {
+            sessionId = await createSession(sessionCode);
+            await addAdmin(userId, sessionId);
         }
+
+        await joinSession(userId, sessionId);
+        return new Response(JSON.stringify({ message: 'Joined session successfully', sessionId }), { status: 200 });
+
     } catch (error) {
         console.error('Error handling session:', error);
         return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 });
