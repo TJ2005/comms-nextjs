@@ -1,8 +1,373 @@
-.container{
+/* General Styling */
+body {
+    margin: 0;
+    font-family: monospace;
+    background-color: #ffffff;
+    color: #000000;
+}
+
+/* Main Container */
+.container {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background-color: #f5f5f5;
+    padding: 1rem;
 }
+
+/* Code Display */
+.codeContainer p {
+    font-size: 1rem;
+    padding: 0.75rem 2rem;
+    font-weight: 500;
+    background-color: #d9d9d9;
+    margin-bottom: 2rem;
+}
+
+/* Chat Box */
+.chatBox {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: auto;
+    height: 75vh;
+    width: 90vw;
+    background-color: #d9d9d9;
+    padding: 1.5rem;
+    overflow-y: auto;
+    overflow-x: hidden; /* Hide horizontal scrollbar */
+}
+
+/* Messages */
+.chatMessages {
+    flex-grow: 1;
+    width: auto;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.message {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 1rem;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: fadeInUp 0.3s ease-in-out forwards;
+    border-radius: 10px; /* Added for rounded edges */
+}
+
+/* PFP */
+.pfpContainer {
+    display: flex;
+    align-items: center;
+}
+
+.pfp {
+    width: 40px;
+    height: 40px;
+    background-color: #c0c0c0;
+    border-radius: 50%; /* Added for rounded edges */
+}
+
+/* Message Content */
+.messageContent {
+    background-color: #ffffff;
+    padding: 0.75rem 1rem;
+    max-width: 70%;
+    font-size: 0.95rem;
+    word-wrap: break-word;
+    border-radius: 10px; /* Added for rounded edges */
+}
+
+/* Input & Send Button */
+.userUtility {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+}
+
+.input {
+    flex-grow: 1;
+    font-family: monospace;
+    background-color: #ffffff;
+    padding: 0.75rem;
+    font-size: 1rem;
+    outline: none;
+    resize: none;
+    max-height: 6em;
+    transition: all 0.2s;
+    border: none; /* Removed border */
+}
+
+.input:focus {
+    background-color: #f0f0f0;
+}
+
+.send {
+    background-color: #d9d9d9;
+    color: #000000;
+    padding: 0.75rem 2rem;
+    height: 100%;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    border: none; /* Removed border */
+}
+
+.send:hover {
+    background-color: #c0c0c0;
+}
+
+/* Updated Message Meta for better dropdown positioning */
+.messageMeta {
+    display: flex;
+    width: 100%;
+    gap: 1em;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #000000;
+    position: relative;
+    margin-bottom: 4px;
+}
+
+/* Container for the dropdown icon */
+.dropdownContainer {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-radius: 50%;
+}
+
+.dropdownContainer:hover {
+    background-color: #f0f0f0;
+}
+
+
+/* Updated dropdown icon styles */
+.dropdownIcon {
+    font-size: 12px;
+    color: #767676;
+    transition: transform 0.2s ease-in-out;
+    cursor: pointer;
+}
+.dropdownIcon:hover {
+    transform: scale(1.1);
+}
+
+/* Dropdown Menu Styles */
+.dropdownMenu {
+    position: fixed;
+    background-color: #ffffff;
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    min-width: 140px;
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    padding: 2px 0;
+}
+
+/* Make dropdown visible when active */
+.dropdownMenu.active {
+    display: flex;
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Top dropdown specific styles */
+.dropdownTop {
+    box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.1), 0 1px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Bottom dropdown specific styles */
+.dropdownBottom {
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
+}
+
+
+.dropdownMenuItem {
+    padding: 10px 16px;
+    font-size: 14px;
+    color: #000000;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    white-space: nowrap;
+}
+
+.dropdownMenuItem:hover {
+    background-color: #f0f0f0;
+}
+
+.copyButton {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background-color: #ff921e; /* Green color */
+    color: #ffffff;
+    padding: 0.25rem 0.6rem;
+    border: none;
+    border-radius: 5px; /* Rounded edges */
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.copyButton:hover {
+    background-color: #45a049; /* Darker green on hover */
+}
+
+.senderMessage{
+    align-self: flex-end;
+    background-color: #ffffff; /* Optional: Different background color for sender messages */
+}
+
+
+/* Edit & Delete Button Styles */
+/* Add these new styles to your existing CSS for editing functionality */
+
+/* Edit Container */
+.editContainer {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+/* Edit Input Field */
+.editInput {
+    font-family: monospace;
+    background-color: #f0f0f0;
+    padding: 0.75rem;
+    font-size: 1rem;
+    outline: none;
+    resize: none;
+    border: 1px solid #c0c0c0;
+    border-radius: 8px;
+    min-height: 2.5em;
+    max-height: 6em;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+/* Edit Actions Container */
+.editActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+/* Edit Save Button */
+.editSave {
+    background-color: #128C7E; /* WhatsApp green */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.editSave:hover {
+    background-color: #0E7A6D;
+}
+
+/* Edit Cancel Button */
+.editCancel {
+    background-color: #f0f0f0;
+    color: #333;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.editCancel:hover {
+    background-color: #e0e0e0;
+}
+
+/* Indication that message was edited */
+.messageContent .edited {
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 4px;
+    text-align: right;
+    font-style: italic;
+}
+/* Sent & Received Alignment */
+
+.sent{
+    justify-content: flex-end;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Simple Mobile View Styling */
+@media screen and (max-width: 768px) {
+    /* Chat box adjustments */
+    .chatBox {
+      padding: 0.8rem;
+      width: 85vw;
+    }
+
+    .chatMessages{
+        padding-right: 0;
+    }
+    
+    /* Smaller text */
+    .messageContent {
+      font-size: 0.85rem;
+      padding: 0.5rem 0.7rem;
+    }
+    
+    /* Adjust input area for mobile */
+    .input {
+      font-size: 0.9rem;
+      padding: 0.6rem;
+    }
+    
+    .send {
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+    }
+    
+    /* Make profile pics smaller */
+    .pfp {
+      width: 30px;
+      height: 30px;
+    }
+    
+    /* Give more breathing room between messages */
+    .message {
+      margin-bottom: 0.7rem;
+    }
+  }

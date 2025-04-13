@@ -48,15 +48,33 @@ const StartSession = () => {
         const response = await fetch('/api/Auth', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include', // Ensures cookies are sent and received
+            credentials: 'include', // Ensures cookies are sent and received for same-origin requests
             body: JSON.stringify({ username, sessionCode: code }),
         });
 
         if (response.ok) {
-            localStorage.setItem('username', username);
+
+            // Redundant code to be removed.
+            // const setCookieHeader = response.headers.get('Set-Cookie');
+            // if (setCookieHeader) {
+            //     document.cookie = setCookieHeader;
+            // }
+            
+
+            
+            const responseData = await response.json();
+            console.log(responseData);
+            const { sessionId, userId } = responseData;
             localStorage.setItem('sessionCode', code);
-            console.log('Username and session code saved to local storage.');
-        } else {
+            localStorage.setItem('username', username);
+            // Debugging
+            // localStorage.setItem('sessionId', sessionId);
+            // localStorage.setItem('userId', userId);
+            // localStorage.setItem('username', username);
+            // console.log('Set-Cookie header:', setCookieHeader);
+            // console.log('Document cookie:', document.cookie);
+            window.location.href = '/chat';
+        }else {
             console.log('Failed to authenticate.');
         }
     };

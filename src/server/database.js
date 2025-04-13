@@ -181,6 +181,7 @@ async function joinOrCreateSession(username, code) {
  * @param {string} content - The message content.
  * @param {string|null} fileUrl - The URL of the file (if applicable).
  * @param {string} messageType - The type of the message (e.g., 'text').
+ * @returns {Promise<string>} - The ID of the sent message.
  */
 async function sendMessage(userId, sessionId, content, fileUrl = null, messageType = 'text') {
     const message = new Message({ 
@@ -191,7 +192,10 @@ async function sendMessage(userId, sessionId, content, fileUrl = null, messageTy
         message_type: messageType 
     });
     await message.save();
+    return message._id;
 }
+
+
 
 /**
  * Get messages from a session with user details.
@@ -208,6 +212,7 @@ async function getMessage(sessionId, limit = 100) {
     return messages;
 }
 
+
 /**
  * Update the settings of a session.
  * @param {string} sessionId - The ID of the session.
@@ -219,25 +224,64 @@ async function updateSessionSettings(sessionId, newSettings) {
         { $set: { session_settings: newSettings } }
     );
 }
-
 /**
  * Edit a message in a session.
  * @param {string} messageId - The ID of the message to edit.
+ * @param {string} authorId - The ID of the author attempting to edit the message.
  * @param {string} newContent - The new content of the message.
+ * @returns {Promise<{success: boolean, error?: string}>} - The result of the operation.
  */
-async function editMessage(messageId, newContent) {
+async function editMessage(messageId, authorId, newContent) {
+    const message = await Message.findOne({ _id: messageId });
+
+    if (!message) {
+        return { success: false, error: 'Message not found' };
+    }
+
+    const sessionId = message.session_id;
+    const session = await Session.findOne({ _id: sessionId });
+    if (!session || !session.session_settings.get('edit_messages')) {
+        return { success: false, error: 'Editing messages is not allowed in this session' };
+    }
+
+    if (message.user_id.toString() !== authorId) {
+        return { success: false, error: 'You are not authorized to edit this message' };
+    }
+
     await Message.updateOne(
         { _id: messageId },
         { $set: { content: newContent } }
     );
+
+    return { success: true };
 }
 
 /**
  * Delete a message from a session.
  * @param {string} messageId - The ID of the message to delete.
+ * @param {string} authorId - The ID of the author attempting to delete the message.
+ * @returns {Promise<{success: boolean, error?: string}>} - The result of the operation.
  */
-async function deleteMessage(messageId) {
+async function deleteMessage(messageId, authorId) {
+    const message = await Message.findOne({ _id: messageId });
+
+    if (!message) {
+        return { success: false, error: 'Message not found' };
+    }
+
+    const sessionId = message.session_id;
+    const session = await Session.findOne({ _id: sessionId });
+    if (!session || !session.session_settings.get('delete_messages')) {
+        return { success: false, error: 'Deleting messages is not allowed in this session' };
+    }
+
+    if (message.user_id.toString() !== authorId) {
+        return { success: false, error: 'You are not authorized to delete this message' };
+    }
+
     await Message.deleteOne({ _id: messageId });
+
+    return { success: true };
 }
 
 /**
@@ -261,6 +305,33 @@ async function checkSession(sessionCode) {
     return session ? session._id : false;
 }
 
+
+/**
+ * Get messages from a session with user details.
+ * @param {string} sessionId - The ID of the session.
+ * @param {number} [limit=100] - The maximum number of messages to retrieve.
+ * @returns {Promise<Array>} - The messages in the session.
+ */
+async function getMessages(sessionId, limit = 100) {
+    const messages = await Message.find({ session_id: sessionId })
+        .sort({ timestamp: -1 })
+        .limit(limit)
+        .populate('user_id', 'username profile_picture_url')
+        .exec();
+    return messages;
+}
+
+/**
+ * Check if a user exists in a session.
+ * @param {string} userId - The ID of the user.
+ * @param {string} sessionId - The ID of the session.
+ * @returns {Promise<boolean>} - True if the user exists in the session, false otherwise.
+ */
+async function isUserInSession(userId, sessionId) {
+    const userSession = await UserSession.findOne({ user_id: userId, session_id: sessionId });
+    return userSession ? true : false;
+}
+
 module.exports = {
     initialize,
     newUser,
@@ -275,5 +346,7 @@ module.exports = {
     editMessage,
     deleteMessage,
     checkMessage,
-    checkSession
+    checkSession,
+    getMessages,
+    isUserInSession
 };

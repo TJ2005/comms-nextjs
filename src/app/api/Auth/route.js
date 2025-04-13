@@ -42,13 +42,19 @@ export async function POST(req) {
         }
 
         await joinSession(userId, sessionId);
-
+        
         // Set cookies for userId and sessionId
         const headers = new Headers();
-        headers.append('Set-Cookie', serialize('userId', userId, { path: '/', httpOnly: true, secure: true, sameSite: 'Strict' }));
-        headers.append('Set-Cookie', serialize('sessionId', sessionId, { path: '/', httpOnly: true, secure: true, sameSite: 'Strict' }));
-
-        return new Response(JSON.stringify({ message: 'Joined session successfully', sessionId }), { status: 200, headers });
+        console.log(userId,sessionId)
+        // Production Settings
+        headers.append('Access-Control-Allow-Credentials', 'true');
+        // headers.append('Set-Cookie', serialize('userId', userId, { path: '/', httpOnly: true, secure: true, sameSite: 'Strict' }));
+        // headers.append('Set-Cookie', serialize('sessionId', sessionId, { path: '/', httpOnly: true, secure: true, sameSite: 'Strict' }));
+        
+        // Development Settings
+        headers.append('Set-Cookie', serialize('userId', userId, { path: '/', httpOnly: true, secure: false, sameSite: 'Lax' }));
+        headers.append('Set-Cookie', serialize('sessionId', sessionId, { path: '/', httpOnly: true, secure: false, sameSite: 'Lax' }));
+        return new Response(JSON.stringify({ message: 'Joined session successfully', sessionId:sessionId, userId:userId }), { status: 200, headers });
 
     } catch (error) {
         console.error('Error handling session:', error);
